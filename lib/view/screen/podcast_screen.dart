@@ -20,7 +20,6 @@ class _PodcastScreenState extends State<PodcastScreen> {
   }
 
   Future<void> fetchPodcasts() async {
-    print('🔍 Starting podcast fetch...');
     try {
       final podcasts = await PodcastApi.fetchPodcasts();
       setState(() {

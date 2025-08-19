@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:podcast_app/api/podcast_api.dart';
 import 'package:podcast_app/model/podcast.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PodcastItem extends StatefulWidget {
   final Podcast podcast;
@@ -13,6 +14,23 @@ class PodcastItem extends StatefulWidget {
 
 class _PodcastItemState extends State<PodcastItem> {
   double progress = 0.0;
+  String? savedPath;
+
+  Future<String?> getSavedPath() async {
+    final sharedPreferences = await SharedPreferences.getInstance();
+    final path = sharedPreferences.getString(
+      'podcast_${widget.podcast.title}/${widget.podcast.id}.mp3',
+    );
+    setState(() {
+      savedPath = path;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getSavedPath(); // runs when widget builds
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +58,9 @@ class _PodcastItemState extends State<PodcastItem> {
               ),
             IconButton(
               padding: EdgeInsets.zero, // Remove default padding
-              icon: Icon(Icons.download),
+              icon: savedPath == null
+                  ? Icon(Icons.download)
+                  : Icon(Icons.play_arrow),
               onPressed: () async {
                 final path = '${widget.podcast.title}/${widget.podcast.id}.mp3';
                 await PodcastApi.downloadPodcast(widget.podcast.audio, path, (
@@ -50,9 +70,10 @@ class _PodcastItemState extends State<PodcastItem> {
                   setState(() {
                     progress = count / total;
                   });
-                  debugPrint('Downloading... ${count / total * 100}%');
                 });
                 setState(() => progress = 0); // Reset when done
+
+                await getSavedPath();
               },
             ),
           ],
